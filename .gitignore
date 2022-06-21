@@ -31,6 +31,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+#prisma 
+prisma/migrations
+
 #vscode 
 .vscode
 
