@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,7 +7,688 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model group {
+  id        String      @id @default(cuid())
+  name      String?
+  permision permision[]
+  users     user[]
+}
+
+model permision {
+  id    String  @id @default(cuid())
+  name  String
+  group group[]
+}
+
+model cart {
+  id            String     @id @default(cuid()) @db.Char(40)
+  token         String?
+  session       String?
+  userid        String?    @db.Char(40)
+  active        Boolean    @default(true)
+  createdat     DateTime   @default(now())
+  updatedat     DateTime   @updatedAt
+  deactivatedat DateTime?
+  user          user?      @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  cartitem      cartitem[]
+}
+
+model cartitem {
+  id        String   @id @default(cuid()) @db.Char(40)
+  cartid    String?  @db.Char(40)
+  quant     Int      @default(1)
+  sku       String?  @db.Char(40)
+  price     Int?
+  discount  Int?
+  minquant  Int      @default(1)
+  active    Boolean  @default(true)
+  content   String?
+  productid String?  @db.Char(40)
+  cart      cart?    @relation(fields: [cartid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  product   product? @relation(fields: [productid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+model link {
+  id        String   @id @default(cuid())
+  title     String?
+  url       String?
+  userid    String?
+  owner     String?
+  createdat DateTime @default(now())
+  updatedat DateTime @updatedAt
+  user      user?    @relation(fields: [userid], references: [id])
+}
+
+model order {
+  id            String        @id @default(cuid()) @db.Char(40)
+  userid        String?       @db.Char(40)
+  session       String?
+  token         String?
+  status        orderstatus   @default(CHECKEDOUT)
+  subtotal      Int           @default(0)
+  totaldiscount Int           @default(0)
+  tax           Int           @default(0)
+  shipment      shipmenttype  @default(POST)
+  SHIPMENTCODE  String?
+  shipmentstate shipmentstate @default(ININV)
+  shipmentcost  Int           @default(0)
+  total         Int           @default(0)
+  promo         Int           @default(0)
+  grandtotal    Int           @default(0)
+  firstname     String?       @db.Char(40)
+  lastname      String?       @db.Char(40)
+  phonenumber   String?       @db.Char(15)
+  country       String?       @db.Char(40)
+  proviance     String?       @db.Char(40)
+  city          String?       @db.Char(40)
+  street        String?       @db.Char(40)
+  createdat     DateTime      @default(now())
+  updatedat     DateTime      @updatedAt
+  user          user?         @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  orderitem     orderitem[]
+  transaction   transaction[]
+}
+
+model orderitem {
+  id        String   @id @default(cuid())
+  productid String?  @db.Char(40)
+  orderid   String?  @db.Char(40)
+  sku       String?  @db.Char(40)
+  price     Int?
+  discount  Int?
+  quant     Int?
+  active    Boolean  @default(true)
+  createdat DateTime @default(now())
+  updatedat DateTime @updatedAt
+  order     order?   @relation(fields: [orderid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  product   product? @relation(fields: [productid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+model shoppayment {
+  id          String        @id @default(cuid())
+  userid      String?
+  shopid      String?
+  type        paymenttype   @default(WITHDRAW)
+  status      paymentstatus @default(CREATED)
+  ampount     Int?
+  title       String?       @db.VarChar(50)
+  intro       String?
+  createdat   DateTime      @default(now())
+  updatedat   DateTime      @updatedAt
+  completedat DateTime?
+  startedat   DateTime      @default(now())
+  content     String?
+  user        user?         @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  shop        shop?         @relation(fields: [shopid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+model transaction {
+  id        String            @id @default(cuid())
+  userid    String?
+  orderid   String?
+  code      String?
+  bank      transactionbank?
+  type      transactiontype   @default(BANKGW)
+  status    transactionstatus @default(FACTOR)
+  createdat DateTime          @default(now())
+  updatedat DateTime          @updatedAt
+  content   String?
+  user      user?             @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  order     order?            @relation(fields: [orderid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+model post {
+  id           String         @id @default(cuid())
+  title        String?        @db.Char(50)
+  headimgurl   String?
+  slug         String?        @db.Char(100)
+  content      String?
+  active       Boolean        @default(true)
+  createdat    DateTime       @default(now())
+  poblishedat  DateTime       @default(now())
+  updatedat    DateTime       @updatedAt
+  userid       String?
+  user         user?          @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  postcategory postcategory[]
+  meta         postmeta[]
+  tags         posttags[]
+  postcomment  postcomment[]
+}
+
+model postcategory {
+  id         String         @id @default(cuid())
+  title      String?        @db.Char(50)
+  headimgurl String?
+  slug       String?        @db.Char(100)
+  content    String?
+  imgurls    String
+  createdat  DateTime       @default(now())
+  updatedat  DateTime       @updatedAt
+  post       post[]
+  tags       posttags[]
+  parent     postcategory[] @relation("postcategory")
+  child      postcategory[] @relation("postcategory")
+}
+
+model postcomment {
+  id        String        @id @default(cuid())
+  content   String
+  createdat DateTime      @default(now())
+  updatedat DateTime      @updatedAt
+  userid    String?
+  postid    String?
+  user      user?         @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  post      post?         @relation(fields: [postid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  parent    postcomment[] @relation("postcomment")
+  child     postcomment[] @relation("postcomment")
+}
+
+model postmeta {
+  id        String   @id @default(cuid())
+  title     String?
+  key       String?
+  value     String?
+  createdat DateTime @default(now())
+  updatedat DateTime @updatedAt
+  post      post[]
+}
+
+model posttags {
+  id           String         @id @default(cuid())
+  tag          String?
+  post         post[]
+  postcategory postcategory[]
+}
+
+model category {
+  id        String     @id @default(cuid())
+  title     String?
+  slug      String?
+  imgurl    String?
+  content   String?
+  active    Boolean    @default(true)
+  tags      tags[]
+  meta      meta[]
+  createdat DateTime   @default(now())
+  updatedat DateTime   @updatedAt
+  product   product[]
+  shop      shop[]
+  parent    category[] @relation("categoryParenting")
+  child     category[] @relation("categoryParenting")
+}
+
+model compare {
+  id         String   @id @default(cuid())
+  session    String?
+  userid     String?
+  product1id String?
+  product2id String?
+  createdat  DateTime @default(now())
+  updatedat  DateTime @updatedAt
+  user       user?    @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+model productcomment {
+  id        String              @id @default(cuid())
+  userid    String?
+  title     String              @db.Char(50)
+  content   String
+  createdat DateTime            @default(now())
+  updatedat DateTime            @updatedAt
+  deletedat DateTime?
+  tags      productcommenttag[]
+  user      user?               @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  parent    productcomment[]    @relation("productcomment")
+  child     productcomment[]    @relation("productcomment")
+}
+
+model productcommenttag {
+  id              String           @id @default(cuid())
+  tag             String?
+  pos             Boolean?
+  procductcomment productcomment[]
+}
+
+model productmeta {
+  id        String   @id @default(cuid())
+  title     String?
+  value     String?
+  createdat DateTime @default(now())
+  updatedat DateTime @default(now())
+}
+
+model producrating {
+  id        String   @id @default(cuid())
+  userid    String?
+  productid String?
+  rate      Int?
+  createdat DateTime @default(now())
+  updatedat DateTime @updatedAt
+  user      user?    @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  product   product? @relation(fields: [productid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+model producreview {
+  id          String   @id @default(cuid())
+  title       String?
+  userid      String?
+  productid   String?
+  imgurl      String[]
+  content     String?
+  iframeurl   String?
+  createdat   DateTime @default(now())
+  updatedat   DateTime @updatedAt
+  publishedat DateTime @default(now())
+  user        user?    @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  product     product? @relation(fields: [productid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+model product {
+  id               String             @id @default(cuid())
+  shopid           String?
+  title            String?
+  slug             String?
+  summary          String?
+  type             producttype        @default(PSC)
+  sku              String?            @db.Char(40)
+  minquant         Int?
+  price            Int?
+  discount         Int?
+  quant            Int?
+  status           productstatus      @default(ACTIVE)
+  rating           Float?
+  ratingcount      Int?
+  producproperties producproperties[]
+  imgurl           String[]
+  productsliderid  String?
+  createdat        DateTime           @default(now())
+  updatedat        DateTime           @updatedAt
+  startedat        DateTime           @default(now())
+  endedat          DateTime?
+  meta             meta[]
+  tags             tags[]
+  shop             shop?              @relation(fields: [shopid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  cartitem         cartitem[]
+  orderitem        orderitem[]
+  producrating     producrating[]
+  producreview     producreview[]
+  category         category[]
+  slider           productslider[]
+  variants         productvariant[]
+  wish             user[]
+}
+
+model producproperties {
+  id                   String                 @id @default(cuid())
+  title                String?
+  product              product[]
+  producpropertiestype producpropertiestype[]
+
+
+}
+
+model producpropertiestype {
+  id               String                 @id @default(cuid())
+  title            String?
+  parent           producpropertiestype[] @relation("producpropertiestype")
+  child            producpropertiestype[] @relation("producpropertiestype")
+  producproperties producproperties[]
+
+}
+
+model productvariant {
+  id        String        @id @default(cuid())
+  value     String?
+  sku       String?
+  price     Int?
+  productid String?
+  status    productstatus @default(ACTIVE)
+  product   product?      @relation(fields: [productid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+model shop {
+  id            String          @id @default(cuid())
+  ownerid       String?
+  title         String?
+  slug          String?
+  imgUrl        String?
+  sliderimage   String[]
+  phonenumber   String[]
+  profile       String?
+  country       String?
+  proviance     String?
+  city          String?
+  street        String?
+  alley         String?
+  rating        Float?
+  ratingcount   Int?
+  createdat     DateTime        @default(now())
+  updatedat     DateTime        @updatedAt
+  deletedat     DateTime?
+  active        Boolean         @default(true)
+  shoptype      shoptype        @default(SHOP)
+  categoryid    String?
+  category      category?       @relation(fields: [categoryid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  owner         user?           @relation(fields: [ownerid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  imageslider   imageslider[]
+  product       product[]
+  productslider productslider[]
+  shopcomment   shopcomment[]
+  userpayment   shoppayment[]
+  shoprating    shoprating[]
+}
+
+model shopcomment {
+  id        String   @id @default(cuid())
+  userid    String?
+  shopid    String?
+  createdat DateTime @default(now())
+  updatedat DateTime @updatedAt
+  content   String?
+  user      user?    @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  shop      shop?    @relation(fields: [shopid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+model shoprating {
+  id        String   @id @default(cuid())
+  userid    String?
+  shopid    String?
+  rate      Int?
+  createdat DateTime @default(now())
+  user      user?    @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  shop      shop?    @relation(fields: [shopid], references: [id], onDelete: SetNull, onUpdate: SetNull)
+}
+
+model productslider {
+  id        String    @id @default(cuid())
+  title     String?   @db.Char(50)
+  backcolor String?   @db.Char(10)
+  createdat DateTime  @default(now())
+  updatedat DateTime  @updatedAt
+  shopid    String?
+  shop      shop?     @relation(fields: [shopid], references: [id], onDelete: SetNull, onUpdate: SetNull)
+  product   product[]
+}
+
+model imageslider {
+  id        String   @id @default(cuid())
+  title     String?  @db.Char(50)
+  backcolor String?  @db.Char(10)
+  createdat DateTime @default(now())
+  updatedat DateTime @updatedAt
+  imgurl    String[]
+  shopid    String?
+  shop      shop?    @relation(fields: [shopid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+model tags {
+  id        String     @id @default(cuid())
+  title     String?
+  createdat DateTime   @default(now())
+  updatedat DateTime   @updatedAt
+  meta      tagmeta[]
+  category  category[]
+  product   product[]
+}
+
+model tagmeta {
+  id    String  @id @default(cuid())
+  title String?
+  value String?
+  tag   tags[]
+}
+
+model meta {
+  id       String     @id @default(cuid())
+  title    String?
+  value    String?
+  meta     String?
+  product  product[]
+  category category[]
+
+}
+
 model user {
-  id    String @id @default(cuid())
-  title String
+  id             String           @id @default(cuid())
+  name           String?
+  password       String
+  groupid        String?          @db.VarChar(50)
+  phonenumber    String           @unique @db.VarChar(14)
+  email          String?          @unique @db.VarChar(50)
+  emailVerified  DateTime?
+  wallet         Int?
+  firstname      String?          @db.VarChar(50)
+  lastname       String?          @db.VarChar(50)
+  slug           String?
+  ctype          customerType     @default(CUSTOMER)
+  img            String?          @db.VarChar(250)
+  isSuperuser    Boolean          @default(false)
+  canhaveshop    Boolean          @default(false)
+  intro          String?
+  isstaff        Boolean          @default(false)
+  isactive       Boolean          @default(true)
+  deactivetime   DateTime?
+  activefrom     DateTime         @default(now())
+  joindate       DateTime         @default(now())
+  updatedat      DateTime         @updatedAt
+  lastlogin      DateTime         @default(now())
+  wishes         product[]
+  group          group?           @relation(fields: [groupid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  accounts       account?
+  adress         adress[]
+  cart           cart[]
+  compare        compare[]
+  link           link[]
+  messages       message[]
+  order          order[]
+  post           post[]
+  postcomment    postcomment[]
+  producrating   producrating[]
+  producreview   producreview[]
+  productcomment productcomment[]
+  sessions       session[]
+  shop           shop[]
+  shopcomment    shopcomment[]
+  shoppayment    shoppayment[]
+  shoprating     shoprating[]
+  subscription   subscription[]
+  transaction    transaction[]
+  sellers        user[]           @relation("user")
+  customers      user[]           @relation("user")
+
+
+}
+
+model session {
+  id           String    @id @default(cuid())
+  sessionToken String?   @unique
+  userId       String?
+  expires      DateTime?
+  user         user?     @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+}
+
+model verificationtoken {
+  id         String    @id @default(cuid())
+  identifier String?
+  token      String?   @unique
+  expires    DateTime?
+
+
+  @@unique([identifier, token])
+}
+
+model account {
+  id                String    @id @default(cuid())
+  userId            String?   @unique
+  type              String?
+  provider          String?
+  providerAccountId String?
+  refreshtoken      String?
+  accesstoken       String?
+  expiresat         DateTime?
+  tokentype         String?
+  scope             String?
+  idtoken           String?
+  sessionstate      String?
+  user              user?     @relation(fields: [userId], references: [id], onDelete: SetNull, onUpdate: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model message {
+  id           String    @id @default(cuid())
+  userid       String?
+  fileUrl      String[]  @db.VarChar(250)
+  title        String?
+  intro        String?
+  createdat    DateTime  @default(now())
+  updatedat    DateTime  @updatedAt
+  responsedate DateTime?
+  type         mtype     @default(REQUESTS)
+  user         user?     @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  request      message[] @relation("message")
+  response     message[] @relation("message")
+}
+
+model subscription {
+  id        String            @id @default(cuid())
+  userid    String?
+  duation   DateTime          @db.Timestamp(6)
+  startedat DateTime          @default(now())
+  endedat   DateTime
+  createdat DateTime          @default(now())
+  updatedat DateTime          @updatedAt
+  subtypeid String?
+  user      user?             @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+  subtype   subscriptiontype? @relation(fields: [subtypeid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+model subscriptiontype {
+  id            String         @id @default(cuid())
+  duration      DateTime?      @db.Timestamp(6)
+  price         Int?
+  discount      Int?
+  startedat     DateTime       @default(now())
+  endedat       DateTime?
+  createdat     DateTime       @default(now())
+  updatedat     DateTime       @updatedAt
+  discription   String?
+  subscriptions subscription[]
+}
+
+model adress {
+  id          String   @id @default(cuid())
+  userid      String?
+  phonenumber String[] @db.Char(15)
+  country     String?  @db.VarChar(50)
+  proviance   String?  @db.VarChar(50)
+  city        String?  @db.VarChar(50)
+  street      String?  @db.VarChar(50)
+  alley       String?  @db.VarChar(50)
+  createdat   DateTime @default(now())
+  updatedat   DateTime @updatedAt
+  content     String?
+  user        user?    @relation(fields: [userid], references: [id], onDelete: SetNull, onUpdate: Cascade)
+}
+
+enum cartstatus {
+  CART
+  CHECKEDOUT
+  ORDER
+  ABANDONED
+}
+
+enum orderstatus {
+  CHECKEDOUT
+  PAid
+  SHIPPED
+  DONE
+  ABANDONED
+}
+
+enum shipmenttype {
+  POST
+  ONDOOR
+  INCITY
+  DOORTEST
+  DONE
+}
+
+enum shipmentstate {
+  ININV
+  READYFORPOST
+  POST
+  DELIVERED
+}
+
+enum paymenttype {
+  WITHDRAW
+}
+
+enum paymentstatus {
+  CREATED
+  REQ
+  INORDER
+  DONE
+  FAILD
+}
+
+enum transactionbank {
+  BMI
+  SEP
+  ZAR
+  idP
+  ZIB
+  BHM
+  MLT
+}
+
+enum transactiontype {
+  ONDOOR
+  BANKGW
+  BNCARD
+  BCNPAY
+}
+
+enum transactionstatus {
+  FACTOR
+  INORDER
+  DONE
+  FAILD
+}
+
+enum producttype {
+  DIG
+  PSC
+}
+
+enum productstatus {
+  ACTIVE
+  DEACTIVE
+  NOPROCE
+  OUT
+  NOTAVIL
+}
+
+enum shoptype {
+  SHOP
+  VISITOR
+  BIGSHOP
+}
+
+enum customerType {
+  CUSTOMER
+  S_BUYER
+  B_BUYER
+  SELLER
+  L_SELLER
+  VISITOR
+}
+
+enum mtype {
+  REQUESTS
+  GRANT
+  ACTIVATION
+  DEACTIVATION
 }
