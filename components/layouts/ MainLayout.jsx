@@ -1,7 +1,7 @@
 export default function MainLayout(props) {
   return (
     <>
-      <div>layout</div>
+      <div>Gozarche</div>
       {props.children}
     </>
   )
